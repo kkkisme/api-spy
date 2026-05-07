@@ -189,10 +189,19 @@
         badge.textContent = count + " 条";
         badge.className = "badge has-events";
 
-        // 截图太长，截断显示
+        // 保留原始 snapshot URL，用占位符替换后再序列化，避免巨长 base64 撑开布局
+        const SNAP_KEY = "__SNAPSHOT_PLACEHOLDER__";
         const clone = JSON.parse(JSON.stringify(event));
-        if (clone.page?.snapshot && clone.page.snapshot.length > 80) {
-          clone.page.snapshot = clone.page.snapshot.slice(0, 80) + "…[截断]";
+        const snapshotUrl = clone.page?.snapshot || null;
+        if (clone.page) clone.page.snapshot = snapshotUrl ? SNAP_KEY : null;
+
+        // 先转义 HTML，再把占位符换成可点击链接（DataURL 只含安全字符，无需再转义）
+        let jsonHtml = escHtml(JSON.stringify(clone, null, 2));
+        if (snapshotUrl) {
+          jsonHtml = jsonHtml.replace(
+            `"${SNAP_KEY}"`,
+            `"<a href="${snapshotUrl}" target="_blank" rel="noopener" title="在新标签页查看截图" style="color:#0078d7">📷 点击查看截图</a>"`
+          );
         }
 
         const logEl = document.getElementById("log");
@@ -205,7 +214,7 @@
           → ${event.request.status || "ERR: " + (event.request.error || "?")}
           (${event.request.duration}ms)
         </div>
-        <pre>${escHtml(JSON.stringify(clone, null, 2))}</pre>
+        <pre>${jsonHtml}</pre>
       `;
 
         // 如果是初始占位符，先清空
