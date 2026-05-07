@@ -2,7 +2,8 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".",
   "rewrites": [
-    { "source": "/basic",    "destination": "/examples/basic/index.html" },
-    { "source": "/autoinit", "destination": "/examples/autoinit/index.html" }
+    { "source": "/mock/:status", "destination": "/api/mock/:status" },
+    { "source": "/basic",        "destination": "/examples/basic/index.html" },
+    { "source": "/autoinit",     "destination": "/examples/autoinit/index.html" }
   ]
 }
