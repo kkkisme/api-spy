@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <title>api-spy — script 标签接入示例</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 700px;
+        margin: 40px auto;
+        padding: 0 16px;
+      }
+      h2 { margin-bottom: 4px; }
+      .hint { color: #666; font-size: 13px; margin-bottom: 16px; }
+      code {
+        background: #f4f4f4;
+        border: 1px solid #e0e0e0;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 12px;
+      }
+      pre.snippet {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 16px;
+        border-radius: 6px;
+        font-size: 13px;
+        overflow-x: auto;
+        margin-bottom: 20px;
+      }
+      .btn-group { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+      button {
+        padding: 8px 14px;
+        cursor: pointer;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+        background: #fff;
+        font-size: 13px;
+      }
+      button:hover { background: #f0f0f0; }
+      button.danger { border-color: #e07070; }
+      .log-header { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+      h3 { margin: 0; }
+      .badge {
+        display: inline-block;
+        padding: 2px 7px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: bold;
+        background: #e9ecef;
+        color: #555;
+      }
+      .badge.has-events { background: #f8d7da; color: #721c24; }
+      .entry {
+        border-bottom: 1px dashed #ddd;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+      }
+      .entry:last-child { border-bottom: none; margin-bottom: 0; }
+      .entry-header { font-weight: bold; color: #c0392b; margin-bottom: 4px; font-size: 13px; }
+      pre.log-body {
+        background: #f8f9fa;
+        border: 1px solid #e0e0e0;
+        padding: 14px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        max-height: 320px;
+        overflow: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+      }
+    </style>
+
+    <!--
+      ✅ 唯一需要的代码：一个 script 标签
+         data-endpoint  — 上报地址（必填，有此属性才自动初始化）
+         data-app-id    — 应用标识
+         其余 data-* 均为可选，见 PRD § 4
+    -->
+    <script
+      src="/dist/api-spy.iife.js"
+      data-endpoint="/mock/collect"
+      data-app-id="autoinit-demo"
+      data-capture-snapshot="true"
+      data-sample-rate="1"
+    ></script>
+  </head>
+  <body>
+    <h2>api-spy — script 标签接入</h2>
+    <p class="hint">
+      页面里只加了一个 <code>&lt;script&gt;</code> 标签，无需任何 JS 初始化代码。
+    </p>
+
+    <pre class="snippet">&lt;script
+  src="/dist/api-spy.iife.js"
+  data-endpoint="https://your-server.com/collect"
+  data-app-id="my-app"
+  data-capture-snapshot="true"
+  data-sample-rate="1"
+&gt;&lt;/script&gt;</pre>
+
+    <div class="btn-group">
+      <button onclick="triggerFetch(404)">Fetch 404</button>
+      <button onclick="triggerFetch(500)">Fetch 500</button>
+      <button onclick="triggerFetch(429)">Fetch 429</button>
+      <button onclick="triggerFetch(200)">Fetch 200（不上报）</button>
+      <button onclick="triggerXhr(500)">XHR 500</button>
+      <button onclick="triggerNetworkError()">Fetch 网络错误</button>
+      <button class="danger" onclick="clearLog()">清空日志</button>
+    </div>
+
+    <div class="log-header">
+      <h3>上报日志</h3>
+      <span id="badge" class="badge">0 条</span>
+    </div>
+    <div id="log"><pre class="log-body" style="color:#999">// 等待上报事件…</pre></div>
+
+    <script>
+      // ── 覆盖默认 transport，把事件渲染到页面 ──────────────────────────────
+      // auto-init 已经在 <head> 里的 script 标签执行完毕时完成了 spy.init()
+      // 这里只需要补设 transport，让事件显示在页面上（实际项目中不需要这步）
+      if (typeof ApiSpy !== 'undefined') {
+        // 重新初始化（会被幂等忽略），通过 destroy + init 替换 transport
+        ApiSpy.spy.destroy().then(() => {
+          ApiSpy.spy.init({
+            endpoint: '/mock/collect',
+            appId: 'autoinit-demo',
+            captureSnapshot: true,
+            sampleRate: 1,
+            transport: async (events) => { events.forEach(appendLog) },
+          })
+        })
+      }
+
+      // ── 触发函数 ─────────────────────────────────────────────────────────
+      async function triggerFetch(status) {
+        await fetch('/mock/' + status).catch(() => {})
+      }
+      function triggerXhr(status) {
+        const xhr = new XMLHttpRequest()
+        xhr.open('GET', '/mock/' + status)
+        xhr.send()
+      }
+      async function triggerNetworkError() {
+        await fetch('https://this-domain-does-not-exist-apyspy.invalid/').catch(() => {})
+      }
+
+      // ── 日志渲染 ─────────────────────────────────────────────────────────
+      let count = 0
+      function appendLog(event) {
+        count++
+        const badge = document.getElementById('badge')
+        badge.textContent = count + ' 条'
+        badge.className = 'badge has-events'
+
+        const clone = JSON.parse(JSON.stringify(event))
+        if (clone.page?.snapshot?.length > 80)
+          clone.page.snapshot = clone.page.snapshot.slice(0, 80) + '…[截断]'
+
+        const logEl = document.getElementById('log')
+        const entry = document.createElement('div')
+        entry.className = 'entry'
+        entry.innerHTML = `
+          <div class="entry-header">
+            [${new Date().toLocaleTimeString()}]
+            ${event.request.type.toUpperCase()} ${event.request.method} ${event.request.url}
+            → ${event.request.status || 'ERR: ' + (event.request.error || '?')}
+            (${event.request.duration} ms)
+          </div>
+          <pre class="log-body">${escHtml(JSON.stringify(clone, null, 2))}</pre>
+        `
+        if (logEl.querySelector('pre[style]')) logEl.innerHTML = ''
+        logEl.prepend(entry)
+      }
+
+      function clearLog() {
+        document.getElementById('log').innerHTML = '<pre class="log-body" style="color:#999">// 等待上报事件…</pre>'
+        count = 0
+        const badge = document.getElementById('badge')
+        badge.textContent = '0 条'
+        badge.className = 'badge'
+      }
+
+      function escHtml(s) {
+        return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      }
+    </script>
+  </body>
+</html>

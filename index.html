@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+  <title>api-spy demos</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 480px; margin: 60px auto; padding: 0 16px; }
+    h2   { margin-bottom: 24px; }
+    ul   { list-style: none; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+    a    { display: block; padding: 14px 18px; border: 1px solid #ddd; border-radius: 6px;
+           text-decoration: none; color: #222; font-size: 14px; }
+    a:hover { background: #f5f5f5; }
+    a span  { display: block; font-size: 12px; color: #888; margin-top: 3px; }
+  </style>
+</head>
+<body>
+  <h2>api-spy 示例</h2>
+  <ul>
+    <li>
+      <a href="/basic">
+        手动初始化
+        <span>调用 ApiSpy.spy.init(config) 完成配置，适合需要自定义 transport / hook 的场景</span>
+      </a>
+    </li>
+    <li>
+      <a href="/autoinit">
+        script 标签自动初始化
+        <span>只需一行 &lt;script data-endpoint="..."&gt;，零 JS 代码接入</span>
+      </a>
+    </li>
+  </ul>
+</body>
+</html>
