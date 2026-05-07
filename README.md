@@ -2,6 +2,10 @@
 
 轻量级前端 API 监控 SDK。自动拦截 `XHR` / `fetch`，在请求出错时截取页面快照并上报，全程非阻塞主线程。
 
+**[🔗 在线 Demo](https://api-spy-eta.vercel.app)** · [手动初始化示例](https://api-spy-eta.vercel.app/basic) · [script 标签示例](https://api-spy-eta.vercel.app/autoinit)
+
+---
+
 ## 特性
 
 - 🔌 **零侵入接入** — 一行 `<script>` 标签即可启用，无需任何 JS 初始化代码
@@ -200,11 +204,13 @@ npm run test:coverage
 
 ### Demo 页面
 
-| 地址 | 说明 |
-|------|------|
-| `http://localhost:5174/` | 导航首页 |
-| `http://localhost:5174/basic` | 手动初始化示例 |
-| `http://localhost:5174/autoinit` | script 标签自动初始化示例 |
+本地运行（`npm run serve`）：
+
+| 本地地址 | 线上地址 | 说明 |
+|----------|----------|------|
+| `http://localhost:5174/` | [api-spy-eta.vercel.app](https://api-spy-eta.vercel.app) | 导航首页 |
+| `http://localhost:5174/basic` | [/basic](https://api-spy-eta.vercel.app/basic) | 手动初始化示例 |
+| `http://localhost:5174/autoinit` | [/autoinit](https://api-spy-eta.vercel.app/autoinit) | script 标签自动初始化示例 |
 
 ---
 
